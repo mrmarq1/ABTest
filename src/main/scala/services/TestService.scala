@@ -35,7 +35,7 @@ object TestService {
 
     def addTest(newTest: NewTest): F[Option[mutable.ArrayBuffer[Test]]] = {
       val test = createTest(newTest)
-      tests += test
+      testsDb += test
     }
 
     def updateTestName(testId: TestId): F[Option[mutable.ArrayBuffer[Test]]] = {

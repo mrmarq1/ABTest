@@ -17,7 +17,7 @@ object PracticeDb {
   val brand2: Brand = Brand("Company B")
   val brand3: Brand = Brand("Company C")
 
-  val tests: mutable.ArrayBuffer[Test] = mutable.ArrayBuffer(
+  val testsDb: mutable.ArrayBuffer[Test] = mutable.ArrayBuffer(
     Test(
       testId = testId1,
       brand = brand1,
@@ -76,6 +76,6 @@ object PracticeDb {
   type BrandMappedDb = Map[Brand, mutable.ArrayBuffer[Test]]
 
   // def, not val, so no memoization meaning GET requests to reflect updated tests
-  def idMappedDb: IdMappedDb = tests.groupBy(_.testId)
-  def brandMappedDb: BrandMappedDb = tests.groupBy(_.brand)
+  def idMappedDb: IdMappedDb = testsDb.groupBy(_.testId)
+  def brandMappedDb: BrandMappedDb = testsDb.groupBy(_.brand)
 }
