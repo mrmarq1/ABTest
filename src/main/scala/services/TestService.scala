@@ -18,11 +18,11 @@ object TestService {
     // POST
     def addTest(newTest: NewTest): F[mutable.ArrayBuffer[Test]]
     // PUT
-    def updateTestName(testId: TestId): F[Option[mutable.ArrayBuffer[Test]]]
-    def updateTestStatus(testId: TestId): F[Option[mutable.ArrayBuffer[Test]]]
+    def updateTestName(testId: TestId): F[mutable.ArrayBuffer[Test]]
+    def updateTestStatus(testId: TestId): F[mutable.ArrayBuffer[Test]]
     // GET
-    def getTestById(testId: TestId)(idMappedDb: IdMappedDb): F[Option[Test]]
-    def getTestsByBrand(brand: Brand)(brandMappedDb: BrandMappedDb): F[Option[List[Test]]]
+    def getTestById(testId: TestId)(idMappedDb: IdMappedDb): F[Test]
+    def getTestsByBrand(brand: Brand)(brandMappedDb: BrandMappedDb): F[List[Test]]
   }
 
   def createTest(newTest: NewTest): Test = {
@@ -37,7 +37,7 @@ object TestService {
   val connection = DatabaseConnection(testsDb)
 
   // Interpreter
-  case class TestRoutesInterpreter[F[_], A](implicit rs: Resource[F, DatabaseConnection], me: MonadCancel[F, Throwable]) extends TestRoutesAlgebra[F] {
+  case class TestRoutesInterpreter[F[_], A](implicit mc: MonadCancel[F, Throwable]) extends TestRoutesAlgebra[F] {
     // Method implemented ahead of transitioning practice database and requiring a network connection
     def dbConnection(): Resource[F, DatabaseConnection] =
       Resource.make(MonadError[F, Throwable].catchNonFatal(connection)) {
@@ -57,19 +57,19 @@ object TestService {
       }
     }
 
-    def updateTestName(testId: TestId): F[Option[mutable.ArrayBuffer[Test]]] = {
+    def updateTestName(testId: TestId): F[mutable.ArrayBuffer[Test]] = {
       ???
     }
 
-    def updateTestStatus(testId: TestId): F[Option[mutable.ArrayBuffer[Test]]] = {
+    def updateTestStatus(testId: TestId): F[mutable.ArrayBuffer[Test]] = {
       ???
     }
 
-    def getTestById(testId: TestId)(idMappedDb: IdMappedDb): F[Option[Test]] = {
+    def getTestById(testId: TestId)(idMappedDb: IdMappedDb): F[Test] = {
       ???
     }
 
-    def getTestsByBrand(brand: Brand)(brandMappedDb: BrandMappedDb): F[Option[List[Test]]] = {
+    def getTestsByBrand(brand: Brand)(brandMappedDb: BrandMappedDb): F[List[Test]] = {
       ???
     }
   }
