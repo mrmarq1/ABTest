@@ -1,6 +1,7 @@
 package persistence
 
-import domain.Test._
+import domain.Advert
+import domain.Test.{Live, Pending, Ended, Paused, _}
 import domain.Advert._
 import domain.Brand._
 
@@ -22,12 +23,13 @@ object PracticeDb {
       testId = testId1,
       brand = brand1,
       testName = TestName("test1"),
-      adVariants = LazyList(
-        AdVariant(UUID.fromString("637497c4-a275-4ce0-9c2c-80624656a36a"), "Text1"),
-        AdVariant(UUID.fromString("e3b559b3-eda1-432e-ae11-13d26fee4e65"), "Text2"),
-        AdVariant(UUID.fromString("5adec0e3-a13b-4513-9ffa-0d5fca868c6d"), "Text3"),
-        AdVariant(UUID.fromString("48d125cc-6402-48d1-b745-ea9b99bfab5b"), "Text4")
+      adVariants = Vector(
+        AdVariant(UUID.fromString("637497c4-a275-4ce0-9c2c-80624656a36a"), "Text1", 50000.00, false),
+        AdVariant(UUID.fromString("e3b559b3-eda1-432e-ae11-13d26fee4e65"), "Text2", 270000.00, false),
+        AdVariant(UUID.fromString("5adec0e3-a13b-4513-9ffa-0d5fca868c6d"), "Text3", 0, true),
+        AdVariant(UUID.fromString("48d125cc-6402-48d1-b745-ea9b99bfab5b"), "Text4", 170000.50, false)
       ),
+      testSpend = 1000000,
       testDuration = 105.50,
       testStatus = Live
     ),
@@ -35,12 +37,13 @@ object PracticeDb {
       testId = testId2,
       brand = brand1,
       testName = TestName("test2"),
-      adVariants = LazyList(
-        AdVariant(UUID.fromString("637497c4-a275-4ce0-9c2c-80624656a36a"), "Text1"),
-        AdVariant(UUID.fromString("e3b559b3-eda1-432e-ae11-13d26fee4e65"), "Text2"),
-        AdVariant(UUID.fromString("5adec0e3-a13b-4513-9ffa-0d5fca868c6d"), "Text3"),
-        AdVariant(UUID.fromString("48d125cc-6402-48d1-b745-ea9b99bfab5b"), "Text4")
+      adVariants = Vector(
+        AdVariant(UUID.fromString("637497c4-a275-4ce0-9c2c-80624656a36a"), "Text1", 250000, false),
+        AdVariant(UUID.fromString("e3b559b3-eda1-432e-ae11-13d26fee4e65"), "Text2", 250000, false),
+        AdVariant(UUID.fromString("5adec0e3-a13b-4513-9ffa-0d5fca868c6d"), "Text3", 250000, false),
+        AdVariant(UUID.fromString("48d125cc-6402-48d1-b745-ea9b99bfab5b"), "Text4", 250000, false),
       ),
+      testSpend = 2500000,
       testDuration = 193.50,
       testStatus = Pending
     ),
@@ -48,10 +51,11 @@ object PracticeDb {
       testId = testId3,
       brand = brand2,
       testName = TestName("test3"),
-      adVariants = LazyList(
-        AdVariant(UUID.fromString("981cad7f-a8f3-426a-8a1e-6ff322c0b6f2"), "Text1"),
-        AdVariant(UUID.fromString("ffc656dc-ee19-4d3e-883c-ff0625f94f09"), "Text2")
+      adVariants = Vector(
+        AdVariant(UUID.fromString("981cad7f-a8f3-426a-8a1e-6ff322c0b6f2"), "Text1", 350000, false),
+        AdVariant(UUID.fromString("ffc656dc-ee19-4d3e-883c-ff0625f94f09"), "Text2", 0, true),
       ),
+      testSpend = 500000,
       testDuration = 85.50,
       testStatus = Ended
     ),
@@ -59,14 +63,15 @@ object PracticeDb {
       testId = testId4,
       brand = brand3,
       testName = TestName("test4"),
-      adVariants = LazyList(
-        AdVariant(UUID.fromString("76fb2820-43af-4b13-af56-eccf0346ecad"), "Text1"),
-        AdVariant(UUID.fromString("753dc6e5-9372-4cfd-884d-4ac67277931a"), "Text2"),
-        AdVariant(UUID.fromString("51aa982b-76a3-4228-af57-6110dc004c68"), "Text2"),
-        AdVariant(UUID.fromString("2d002f7a-1cf2-4238-9dc4-6efb0aafb7a3"), "Text2"),
-        AdVariant(UUID.fromString("d539560b-6079-4658-b338-bd2b64fb06f8"), "Text2"),
-        AdVariant(UUID.fromString("8be2f419-5ead-4395-8ff8-14afc468aed3"), "Text2")
+      adVariants = Vector(
+        AdVariant(UUID.fromString("76fb2820-43af-4b13-af56-eccf0346ecad"), "Text1", 50000, false),
+        AdVariant(UUID.fromString("753dc6e5-9372-4cfd-884d-4ac67277931a"), "Text1", 0, true),
+        AdVariant(UUID.fromString("51aa982b-76a3-4228-af57-6110dc004c68"), "Text1", 20000, false),
+        AdVariant(UUID.fromString("2d002f7a-1cf2-4238-9dc4-6efb0aafb7a3"), "Text1", 110000, false),
+        AdVariant(UUID.fromString("d539560b-6079-4658-b338-bd2b64fb06f8"), "Text1", 160000, false),
+        AdVariant(UUID.fromString("8be2f419-5ead-4395-8ff8-14afc468aed3"), "Text1", 0, true),
       ),
+      testSpend = 750000,
       testDuration = 210.00,
       testStatus = Paused
     )
@@ -76,6 +81,6 @@ object PracticeDb {
   type BrandMappedDb = Map[Brand, mutable.ArrayBuffer[Test]]
 
   // def, not val, so no memoization meaning GET requests to reflect updated tests
-  def idMappedDb: IdMappedDb = testsDb.groupBy(_.testId)
-  def brandMappedDb: BrandMappedDb = testsDb.groupBy(_.brand)
+  def idMappedDb(testDb: mutable.ArrayBuffer[Test]): IdMappedDb = testsDb.groupBy(_.testId)
+  def brandMappedDb(testDb: mutable.ArrayBuffer[Test]): BrandMappedDb = testsDb.groupBy(_.brand)
 }
