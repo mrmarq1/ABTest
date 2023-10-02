@@ -1,6 +1,6 @@
 package persistence
 
-import domain.Test.{Ended, Live, Paused, Pending, _}
+import domain.ABTest._
 import domain.Advert._
 import domain.Brand._
 
@@ -16,17 +16,17 @@ object PracticeDb {
   val testId3: TestId = TestId(UUID.fromString("75402ece-cf57-43e0-b534-296c44188e47"))
   val testId4: TestId = TestId(UUID.fromString("af591b46-c48a-4f8d-9f1d-863ec558ad68"))
 
-  val brand1: Brand = Brand("Company A")
-  val brand2: Brand = Brand("Company B")
-  val brand3: Brand = Brand("Company C")
+  val brand1: BrandName = BrandName("Company A")
+  val brand2: BrandName = BrandName("Company B")
+  val brand3: BrandName = BrandName("Company C")
 
   val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
   val emptyDateTime = LocalDateTime.MIN
 
-  val testsDb: mutable.ArrayBuffer[Test] = mutable.ArrayBuffer(
+  var testsDb: mutable.ArrayBuffer[Test] = mutable.ArrayBuffer(
     Test(
       testId = testId1,
-      brand = brand1,
+      brandName = brand1,
       testName = TestName("test1"),
       adVariants = Vector(
         AdVariant(UUID.fromString("637497c4-a275-4ce0-9c2c-80624656a36a"), "Text1", 50000.00, false),
@@ -43,7 +43,7 @@ object PracticeDb {
     ),
     Test(
       testId = testId2,
-      brand = brand1,
+      brandName = brand1,
       testName = TestName("test2"),
       adVariants = Vector(
         AdVariant(UUID.fromString("637497c4-a275-4ce0-9c2c-80624656a36a"), "Text1", 250000, false),
@@ -60,7 +60,7 @@ object PracticeDb {
     ),
     Test(
       testId = testId3,
-      brand = brand2,
+      brandName = brand2,
       testName = TestName("test3"),
       adVariants = Vector(
         AdVariant(UUID.fromString("981cad7f-a8f3-426a-8a1e-6ff322c0b6f2"), "Text1", 350000, false),
@@ -75,7 +75,7 @@ object PracticeDb {
     ),
     Test(
       testId = testId4,
-      brand = brand3,
+      brandName = brand3,
       testName = TestName("test4"),
       adVariants = Vector(
         AdVariant(UUID.fromString("76fb2820-43af-4b13-af56-eccf0346ecad"), "Text1", 50000, false),
@@ -95,9 +95,9 @@ object PracticeDb {
   )
 
   type IdMappedDb = Map[TestId, mutable.ArrayBuffer[Test]]
-  type BrandMappedDb = Map[Brand, mutable.ArrayBuffer[Test]]
+  type BrandMappedDb = Map[BrandName, mutable.ArrayBuffer[Test]]
 
   // def, not val, so no memoization meaning GET requests to reflect updated tests
-  def idMappedDb(testDb: mutable.ArrayBuffer[Test]): IdMappedDb = testsDb.groupBy(_.testId)
-  def brandMappedDb(testDb: mutable.ArrayBuffer[Test]): BrandMappedDb = testsDb.groupBy(_.brand)
+  def idMappedDb(): IdMappedDb = testsDb.groupBy(_.testId)
+  def brandMappedDb(): BrandMappedDb = testsDb.groupBy(_.brandName)
 }
