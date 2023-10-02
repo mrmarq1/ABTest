@@ -6,8 +6,8 @@ import Advert._
 
 import java.time.LocalDateTime
 
-object Test {
-  case class Test(testId: TestId, brand: Brand, testName: TestName, adVariants: Vector[AdVariant], testSpend: BigDecimal,
+object ABTest {
+  case class Test(testId: TestId, brandName: BrandName, testName: TestName, adVariants: Vector[AdVariant], testSpend: BigDecimal,
                   testDuration: Double, testSubmissionDate: LocalDateTime, testStartDate: LocalDateTime,
                   testStatus: TestStatus, testUpdate: TestUpdate)
 
@@ -27,7 +27,7 @@ object Test {
   case object TestNameUpdated extends TestUpdate
   case object BrandNameUpdated extends TestUpdate
 
-  case class NewTest(brand: Brand, testName: TestName, adTextVariants: Vector[variantText],
+  case class NewTest(brandName: BrandName, testName: TestName, adTextVariants: Vector[variantText],
                      testSpend: BigDecimal, testDuration: Double)
 }
 

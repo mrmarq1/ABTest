@@ -1,5 +1,5 @@
 package domain
 
 object Brand {
-  case class Brand(brand: String)
+  case class BrandName(brandName: String)
 }
