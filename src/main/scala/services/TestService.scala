@@ -72,10 +72,12 @@ object TestService {
     }
 
     def getTestById(testId: TestId): F[Option[Test]] = {
-      ???
+      val testById = idMappedDb().get(testId)
+      Monad[F].pure(testById.flatMap(_.headOption))
     }
 
     def getTestsByBrand(brandName: BrandName): F[Option[List[Test]]] = {
+      println(brandName)
       val testsByBrand = brandMappedDb().get(brandName).map(_.toList)
       Monad[F].pure(testsByBrand)
     }
