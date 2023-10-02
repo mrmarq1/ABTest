@@ -23,7 +23,7 @@ object PracticeDb {
   val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
   val emptyDateTime = LocalDateTime.MIN
 
-  var testsDb: mutable.ArrayBuffer[Test] = mutable.ArrayBuffer(
+  val testsDb: mutable.ArrayBuffer[Test] = mutable.ArrayBuffer(
     Test(
       testId = testId1,
       brandName = brand1,
