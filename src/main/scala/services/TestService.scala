@@ -7,9 +7,8 @@ import cats.implicits._
 import scala.collection.mutable
 import java.util.UUID
 import domain.Advert.AdVariant
-import domain.Test._
+import domain.ABTest._
 import domain.Brand._
-import domain.Test.Test
 import persistence.PracticeDb._
 
 import java.time.LocalDateTime
@@ -23,8 +22,8 @@ object TestService {
     def updateTestName(testId: TestId, newTestName: TestName): F[mutable.ArrayBuffer[Test]]
     def updateTestStatus(testId: TestId): F[mutable.ArrayBuffer[Test]]
     // GET
-    def getTestById(testId: TestId): F[Test]
-    def getTestsByBrand(brand: Brand): F[List[Test]]
+    def getTestById(testId: TestId): F[Option[Test]]
+    def getTestsByBrand(brand: BrandName): F[Option[List[Test]]]
   }
 
   def createTest(newTest: NewTest): Test = {
@@ -35,7 +34,7 @@ object TestService {
     val testStartDate: LocalDateTime = emptyDateTime
     val testStatus: TestStatus = Pending
     val testUpdate: TestUpdate = NoUpdate
-    Test(testId, newTest.brand, newTest.testName, adVariants, newTest.testSpend, newTest.testDuration,
+    Test(testId, newTest.brandName, newTest.testName, adVariants, newTest.testSpend, newTest.testDuration,
       testSubmissionDate, testStartDate, testStatus, testUpdate)
   }
 
@@ -72,12 +71,13 @@ object TestService {
       ???
     }
 
-    def getTestById(testId: TestId): F[Test] = {
+    def getTestById(testId: TestId): F[Option[Test]] = {
       ???
     }
 
-    def getTestsByBrand(brand: Brand): F[List[Test]] = {
-      ???
+    def getTestsByBrand(brandName: BrandName): F[Option[List[Test]]] = {
+      val testsByBrand = brandMappedDb().get(brandName).map(_.toList)
+      Monad[F].pure(testsByBrand)
     }
   }
 }
