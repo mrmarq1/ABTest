@@ -17,10 +17,17 @@ import org.http4s.dsl._
 import org.http4s.implicits._
 import org.http4s.server._
 import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.dsl.impl.QueryParamDecoderMatcher
+import org.http4s.dsl.impl.{OptionalValidatingQueryParamDecoderMatcher, QueryParamDecoderMatcher}
+
+import java.util.UUID
+import scala.util.Try
 
 object TestRoutes extends IOApp {
+  implicit val idQueryParamDecoder: QueryParamDecoder[UUID] = QueryParamDecoder[String].emap { idString =>
+    Try(UUID.fromString(idString)).toEither.leftMap { e => ParseFailure(e.getMessage, e.getMessage) }
+  }
 
+  object TestIdQueryParamMatcher extends OptionalValidatingQueryParamDecoderMatcher[UUID]("testId")
   object BrandQueryParamMatcher extends QueryParamDecoderMatcher[String]("brand")
 
   def testRoutes[F[_] : Monad : MonadThrow : Concurrent](algebra: TestRoutesAlgebra[F]): HttpRoutes[F] = {
@@ -61,6 +68,21 @@ object TestRoutes extends IOApp {
         algebra.getTestsByBrand(BrandName(brand)).flatMap {
           case Some(brandTests) => Ok(brandTests.asJson)
           case _ => NotFound(s"'$brand' currently has no tests in the database")
+        }
+
+      case GET -> Root / "searchId" :? TestIdQueryParamMatcher(testId) =>
+        testId match {
+          case Some(validatedUUID) =>
+            validatedUUID.fold(
+              _ => BadRequest("Invalid UUID format for test ID"),
+              uuid => {
+                algebra.getTestById(TestId(uuid)).flatMap {
+                  case Some(test) => Ok(test.asJson)
+                  case _ => NotFound(s"No tests found for the id $uuid")
+                }
+              }
+            )
+          case _ => BadRequest("No test ID entered")
         }
     }
   }
