@@ -1,16 +1,18 @@
 package services
 
-import cats.effect.{IO, MonadCancel, Resource, Sync}
-import cats.{Applicative, ApplicativeThrow, Monad, MonadError}
+import cats.effect.{MonadCancel, Resource}
+import cats.{Applicative, Monad, MonadError}
 import cats.implicits._
-import cats.syntax.all._
 
 import scala.collection.mutable
 import java.util.UUID
 import domain.Advert.AdVariant
 import domain.Test._
 import domain.Brand._
+import domain.Test.Test
 import persistence.PracticeDb._
+
+import java.time.LocalDateTime
 
 object TestService {
   // Algebra
@@ -18,18 +20,23 @@ object TestService {
     // POST
     def addTest(newTest: NewTest): F[mutable.ArrayBuffer[Test]]
     // PUT
-    def updateTestName(testId: TestId): F[mutable.ArrayBuffer[Test]]
+    def updateTestName(testId: TestId, newTestName: TestName): F[mutable.ArrayBuffer[Test]]
     def updateTestStatus(testId: TestId): F[mutable.ArrayBuffer[Test]]
     // GET
-    def getTestById(testId: TestId)(idMappedDb: IdMappedDb): F[Test]
-    def getTestsByBrand(brand: Brand)(brandMappedDb: BrandMappedDb): F[List[Test]]
+    def getTestById(testId: TestId): F[Test]
+    def getTestsByBrand(brand: Brand): F[List[Test]]
   }
 
   def createTest(newTest: NewTest): Test = {
     val testId: TestId = TestId(UUID.randomUUID())
-    val adVariants: LazyList[AdVariant] = newTest.adTextVariants.map(adText => AdVariant(UUID.randomUUID(), adText))
+    val variantSpend: BigDecimal = newTest.testSpend / newTest.adTextVariants.length
+    val adVariants: Vector[AdVariant] = newTest.adTextVariants.map(adText => AdVariant(UUID.randomUUID(), adText, variantSpend, false))
+    val testSubmissionDate: LocalDateTime = LocalDateTime.now()
+    val testStartDate: LocalDateTime = emptyDateTime
     val testStatus: TestStatus = Pending
-    Test(testId, newTest.brand, newTest.testName, adVariants, newTest.testDuration, testStatus)
+    val testUpdate: TestUpdate = NoUpdate
+    Test(testId, newTest.brand, newTest.testName, adVariants, newTest.testSpend, newTest.testDuration,
+      testSubmissionDate, testStartDate, testStatus, testUpdate)
   }
 
   // Temporary definitions
@@ -37,7 +44,7 @@ object TestService {
   val connection = DatabaseConnection(testsDb)
 
   // Interpreter
-  case class TestRoutesInterpreter[F[_], A](implicit mc: MonadCancel[F, Throwable]) extends TestRoutesAlgebra[F] {
+  case class TestRoutesInterpreter[F[_]]()(implicit mc: MonadCancel[F, Throwable]) extends TestRoutesAlgebra[F] {
     // Method implemented ahead of transitioning practice database and requiring a network connection
     def dbConnection(): Resource[F, DatabaseConnection] =
       Resource.make(MonadError[F, Throwable].catchNonFatal(connection)) {
@@ -57,7 +64,7 @@ object TestService {
       }
     }
 
-    def updateTestName(testId: TestId): F[mutable.ArrayBuffer[Test]] = {
+    def updateTestName(testId: TestId, newTestName: TestName): F[mutable.ArrayBuffer[Test]] = {
       ???
     }
 
@@ -65,11 +72,11 @@ object TestService {
       ???
     }
 
-    def getTestById(testId: TestId)(idMappedDb: IdMappedDb): F[Test] = {
+    def getTestById(testId: TestId): F[Test] = {
       ???
     }
 
-    def getTestsByBrand(brand: Brand)(brandMappedDb: BrandMappedDb): F[List[Test]] = {
+    def getTestsByBrand(brand: Brand): F[List[Test]] = {
       ???
     }
   }
