@@ -1,13 +1,15 @@
 package domain
 
 import java.util.UUID
-
 import Brand._
 import Advert._
 
+import java.time.LocalDateTime
+
 object Test {
-  case class Test(testId: TestId, brand: Brand, testName: TestName, adVariants: Vector[AdVariant],
-                  testSpend: BigDecimal, testDuration: Double, testStatus: TestStatus)
+  case class Test(testId: TestId, brand: Brand, testName: TestName, adVariants: Vector[AdVariant], testSpend: BigDecimal,
+                  testDuration: Double, testSubmissionDate: LocalDateTime, testStartDate: LocalDateTime,
+                  testStatus: TestStatus, testUpdate: TestUpdate)
 
   case class TestId(testId: UUID)
 
@@ -19,7 +21,14 @@ object Test {
   case object Paused extends TestStatus
   case object Ended extends TestStatus
 
-  case class NewTest(brand: Brand, testName: TestName, adTextVariants: Vector[variantText], testSpend: BigDecimal, testDuration: Double)
+
+  trait TestUpdate
+  case object NoUpdate extends TestUpdate
+  case object TestNameUpdated extends TestUpdate
+  case object BrandNameUpdated extends TestUpdate
+
+  case class NewTest(brand: Brand, testName: TestName, adTextVariants: Vector[variantText],
+                     testSpend: BigDecimal, testDuration: Double)
 }
 
 
