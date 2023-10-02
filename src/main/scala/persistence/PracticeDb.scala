@@ -1,12 +1,14 @@
 package persistence
 
-import domain.Advert
-import domain.Test.{Live, Pending, Ended, Paused, _}
+import domain.Test.{Ended, Live, Paused, Pending, _}
 import domain.Advert._
 import domain.Brand._
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.collection.mutable
+
 
 object PracticeDb {
   val testId1: TestId = TestId(UUID.fromString("0c50d92b-3a3c-45fa-bd1b-08f4b1e9dcac"))
@@ -17,6 +19,9 @@ object PracticeDb {
   val brand1: Brand = Brand("Company A")
   val brand2: Brand = Brand("Company B")
   val brand3: Brand = Brand("Company C")
+
+  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+  val emptyDateTime = LocalDateTime.MIN
 
   val testsDb: mutable.ArrayBuffer[Test] = mutable.ArrayBuffer(
     Test(
@@ -30,8 +35,11 @@ object PracticeDb {
         AdVariant(UUID.fromString("48d125cc-6402-48d1-b745-ea9b99bfab5b"), "Text4", 170000.50, false)
       ),
       testSpend = 1000000,
-      testDuration = 105.50,
-      testStatus = Live
+      testDuration =1405.50,
+      testSubmissionDate = LocalDateTime.parse("2023-09-20 09:45", formatter),
+      testStartDate = LocalDateTime.parse("2023-09-20 09:47", formatter),
+      testStatus = Live,
+      testUpdate = NoUpdate
     ),
     Test(
       testId = testId2,
@@ -45,7 +53,10 @@ object PracticeDb {
       ),
       testSpend = 2500000,
       testDuration = 193.50,
-      testStatus = Pending
+      testSubmissionDate = LocalDateTime.parse("2023-02-10 10:15", formatter),
+      testStartDate = emptyDateTime,
+      testStatus = Pending,
+      testUpdate = TestNameUpdated
     ),
     Test(
       testId = testId3,
@@ -56,8 +67,11 @@ object PracticeDb {
         AdVariant(UUID.fromString("ffc656dc-ee19-4d3e-883c-ff0625f94f09"), "Text2", 0, true),
       ),
       testSpend = 500000,
-      testDuration = 85.50,
-      testStatus = Ended
+      testDuration = 945.50,
+      testSubmissionDate = LocalDateTime.parse("2023-01-07 13:57", formatter),
+      testStartDate = LocalDateTime.parse("2023-02-15 23:27", formatter),
+      testStatus = Ended,
+      testUpdate = NoUpdate
     ),
     Test(
       testId = testId4,
@@ -73,7 +87,10 @@ object PracticeDb {
       ),
       testSpend = 750000,
       testDuration = 210.00,
-      testStatus = Paused
+      testSubmissionDate = LocalDateTime.parse("2023-09-30 11:01", formatter),
+      testStartDate = LocalDateTime.parse("2023-10-01 19:33", formatter),
+      testStatus = Paused,
+      testUpdate = BrandNameUpdated
     )
   )
 
