@@ -77,7 +77,6 @@ object TestService {
     }
 
     def getTestsByBrand(brandName: BrandName): F[Option[List[Test]]] = {
-      println(brandName)
       val testsByBrand = brandMappedDb().get(brandName).map(_.toList)
       Monad[F].pure(testsByBrand)
     }
