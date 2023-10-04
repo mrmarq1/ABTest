@@ -33,6 +33,9 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
     .unsafeToFuture()
 
   "TestRoutes" when {
+
+    // POST request
+    // addTest
     "given a valid POST/addTest request" should {
       "trigger a 200 'Ok' with execution pending text" in {
         val validPostRequest: Json = Json.obj(
@@ -72,16 +75,19 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
       }
     }
 
+    // GET request
+    // getTestsByBrand
+
     "given an valid GET/getTestsByBrand request" should {
       "trigger a 200 'Ok' with a json response for all Tests found" in {
         futureResponse(Json.Null, Method.GET, uri"/searchBrand?brand=Company%20B").map { response =>
           val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
           responseBodyText shouldBe "[{\"testId\":{\"testId\":\"75402ece-cf57-43e0-b534-296c44188e47\"},\"brandName\":{\"brandName\":\"Company B\"}," +
-                                    "\"testName\":{\"testName\":\"test3\"},\"adVariants\":[{\"variantId\":\"981cad7f-a8f3-426a-8a1e-6ff322c0b6f2\"," +
-                                    "\"variantText\":\"Text1\",\"variantSpend\":350000,\"variantDropped\":false},{\"variantId\":\"ffc656dc-ee19-4d3e-883c-ff0625f94f09\"," +
-                                    "\"variantText\":\"Text2\",\"variantSpend\":0,\"variantDropped\":true}],\"testSpend\":500000,\"testDuration\":945.5," +
-                                    "\"testSubmissionDate\":\"2023-01-07T13:57:00\",\"testStartDate\":\"2023-02-15T23:27:00\",\"testStatus\":\"Ended\"," +
-                                    "\"testUpdate\":\"NoUpdate\"}]"
+            "\"testName\":{\"testName\":\"test3\"},\"adVariants\":[{\"variantId\":\"981cad7f-a8f3-426a-8a1e-6ff322c0b6f2\"," +
+            "\"variantText\":\"Text1\",\"variantSpend\":350000,\"variantDropped\":false},{\"variantId\":\"ffc656dc-ee19-4d3e-883c-ff0625f94f09\"," +
+            "\"variantText\":\"Text2\",\"variantSpend\":0,\"variantDropped\":true}],\"testSpend\":500000,\"testDuration\":945.5," +
+            "\"testSubmissionDate\":\"2023-01-07T13:57:00\",\"testStartDate\":\"2023-02-15T23:27:00\",\"testStatus\":\"Ended\"," +
+            "\"testUpdate\":\"NoUpdate\"}]"
           response.status shouldBe Status.Ok
         }
       }
@@ -102,6 +108,44 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
         futureResponse(Json.Null, Method.GET, uri"/searchBrand?brand=?Company%20D").map { response =>
           val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
           responseBodyText shouldBe "Invalid brand name format. Only letters and numbers allowed."
+          response.status shouldBe Status.BadRequest
+        }
+      }
+    }
+
+    // GET request
+    // getTestById
+    "given an valid GET/getTestById request" should {
+      "trigger a 200 'Ok' with a json response for Test found" in {
+        futureResponse(Json.Null, Method.GET, uri"/searchId?testId=75402ece-cf57-43e0-b534-296c44188e47").map { response =>
+          val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
+          println(responseBodyText)
+          responseBodyText shouldBe "{\"testId\":{\"testId\":\"75402ece-cf57-43e0-b534-296c44188e47\"},\"brandName\":{\"brandName\":\"Company B\"}," +
+            "\"testName\":{\"testName\":\"test3\"},\"adVariants\":[{\"variantId\":\"981cad7f-a8f3-426a-8a1e-6ff322c0b6f2\"," +
+            "\"variantText\":\"Text1\",\"variantSpend\":350000,\"variantDropped\":false},{\"variantId\":\"ffc656dc-ee19-4d3e-883c-ff0625f94f09\"," +
+            "\"variantText\":\"Text2\",\"variantSpend\":0,\"variantDropped\":true}],\"testSpend\":500000,\"testDuration\":945.5," +
+            "\"testSubmissionDate\":\"2023-01-07T13:57:00\",\"testStartDate\":\"2023-02-15T23:27:00\",\"testStatus\":\"Ended\"," +
+            "\"testUpdate\":\"NoUpdate\"}"
+          response.status shouldBe Status.Ok
+        }
+      }
+    }
+
+    "given an invalid GET/getTestsByBrand request (Id passed validation but not found)" should {
+      "trigger a 404 'Not Found' with a message stating no tests found for the given id" in {
+        futureResponse(Json.Null, Method.GET, uri"/searchId?testId=75402ece-cf57-43e0-b534-296c44188e41").map { response =>
+          val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
+          responseBodyText shouldBe "No tests found for the id 75402ece-cf57-43e0-b534-296c44188e41"
+          response.status shouldBe Status.NotFound
+        }
+      }
+    }
+
+    "given an invalid GET/getTestsByBrand request (Id failed validation)" should {
+      "trigger a 400 'Bad Request' with a message stating accepted characters" in {
+        futureResponse(Json.Null, Method.GET, uri"/searchId?testId=123").map { response =>
+          val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
+          responseBodyText shouldBe "Invalid UUID format for test ID"
           response.status shouldBe Status.BadRequest
         }
       }
