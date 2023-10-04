@@ -23,11 +23,11 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
       .withHttpApp(TestRoutes.testRoutes[IO](testRoutesInterpreter).orNotFound)
       .resource
 
-  def request(requestBody: Json, method: Method, uri: Uri): Request[IO]#Self#Self = Request[IO](method, uri)
+  val request = (requestBody: Json, method: Method, uri: Uri) => Request[IO](method, uri)
     .withEntity(requestBody.noSpaces)
     .withHeaders(`Content-Type`(MediaType.application.json))
 
-  def futureResponse(requestBody: Json, method: Method, uri: Uri): Future[Response[IO]] = TestRoutes
+  val futureResponse = (requestBody: Json, method: Method, uri: Uri) => TestRoutes
     .testRoutes[IO](testRoutesInterpreter)
     .orNotFound(request(requestBody, method, uri))
     .unsafeToFuture()
