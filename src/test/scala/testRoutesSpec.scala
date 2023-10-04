@@ -35,7 +35,7 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
   "TestRoutes" when {
     "given a valid POST/addTest request" should {
       "trigger a 200 'Ok' with execution pending text" in {
-        val requestBodyOne: Json = Json.obj(
+        val validPostRequest: Json = Json.obj(
           "brandName" -> Json.obj("brandName" -> Json.fromString("Company XYZ Ltd")),
           "testName" -> Json.obj("testName" -> Json.fromString("Another test")),
           "adTextVariants" -> Json.arr(Json.fromString("Hello 1"), Json.fromString("Hello 2"), Json.fromString("Hello 3")),
@@ -43,7 +43,7 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
           "testDuration" -> Json.fromDoubleOrNull(160.00)
         )
 
-        futureResponse(requestBodyOne, Method.POST, uri"/submit").map { response =>
+        futureResponse(validPostRequest, Method.POST, uri"/submit").map { response =>
           val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
           responseBodyText shouldBe "Test successfully submitted. Execution pending..."
           response.status shouldBe Status.Ok
@@ -52,7 +52,7 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
     }
     "given an invalid POST/addTest request" should {
       "trigger a 400 'BadRequest' with error messages for each invalid field" in {
-        val requestBodyTwo: Json = Json.obj(
+        val invalidPostRequest: Json = Json.obj(
           "brandName" -> Json.obj("brandName" -> Json.fromString("Company XYZ Ltd!")),
           "testName" -> Json.obj("testName" -> Json.fromString("Another test*")),
           "adTextVariants" -> Json.arr(Json.fromString("$Hello 1"), Json.fromString("Hello 2"), Json.fromString("Hello 3")),
@@ -60,7 +60,7 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
           "testDuration" -> Json.fromDoubleOrNull(160.00)
         )
 
-        futureResponse(requestBodyTwo, Method.POST, uri"/submit").map { response =>
+        futureResponse(invalidPostRequest, Method.POST, uri"/submit").map { response =>
           val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
           responseBodyText shouldBe "Invalid format for: Company XYZ Ltd!. Please use only letters, numbers or the special characters ,.&'. " +
             "Character limit is 30.\nInvalid format for: Another test*. Please use only letters, numbers or the special characters ,.&'. " +
