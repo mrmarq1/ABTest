@@ -50,8 +50,9 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
         }
       }
     }
+
     "given an invalid POST/addTest request" should {
-      "trigger a 400 'BadRequest' with error messages for each invalid field" in {
+      "trigger a 400 'Bad Request' with error messages for each invalid field" in {
         val invalidPostRequest: Json = Json.obj(
           "brandName" -> Json.obj("brandName" -> Json.fromString("Company XYZ Ltd!")),
           "testName" -> Json.obj("testName" -> Json.fromString("Another test*")),
@@ -66,6 +67,41 @@ class TestRoutesSpec extends AsyncWordSpec with Matchers {
             "Character limit is 30.\nInvalid format for: Another test*. Please use only letters, numbers or the special characters ,.&'. " +
             "Character limit is 30.\nInvalid format for: $Hello 1. Please use only letters, numbers or the special characters ,.!?'. " +
             "Character limit is 120."
+          response.status shouldBe Status.BadRequest
+        }
+      }
+    }
+
+    "given an valid GET/getTestsByBrand request" should {
+      "trigger a 200 'Ok' with a json response for all Tests found" in {
+        futureResponse(Json.Null, Method.GET, uri"/searchBrand?brand=Company%20B").map { response =>
+          val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
+          responseBodyText shouldBe "[{\"testId\":{\"testId\":\"75402ece-cf57-43e0-b534-296c44188e47\"},\"brandName\":{\"brandName\":\"Company B\"}," +
+                                    "\"testName\":{\"testName\":\"test3\"},\"adVariants\":[{\"variantId\":\"981cad7f-a8f3-426a-8a1e-6ff322c0b6f2\"," +
+                                    "\"variantText\":\"Text1\",\"variantSpend\":350000,\"variantDropped\":false},{\"variantId\":\"ffc656dc-ee19-4d3e-883c-ff0625f94f09\"," +
+                                    "\"variantText\":\"Text2\",\"variantSpend\":0,\"variantDropped\":true}],\"testSpend\":500000,\"testDuration\":945.5," +
+                                    "\"testSubmissionDate\":\"2023-01-07T13:57:00\",\"testStartDate\":\"2023-02-15T23:27:00\",\"testStatus\":\"Ended\"," +
+                                    "\"testUpdate\":\"NoUpdate\"}]"
+          response.status shouldBe Status.Ok
+        }
+      }
+    }
+
+    "given an invalid GET/getTestsByBrand request (brand not found)" should {
+      "trigger a 404 'Not Found' with a message stating no tests found for the given brand" in {
+        futureResponse(Json.Null, Method.GET, uri"/searchBrand?brand=Company%20D").map { response =>
+          val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
+          responseBodyText shouldBe "'Company D' currently has no tests in the database"
+          response.status shouldBe Status.NotFound
+        }
+      }
+    }
+
+    "given an invalid GET/getTestsByBrand request (validation failure)" should {
+      "trigger a 400 'Bad Request' with a message stating accepted characters" in {
+        futureResponse(Json.Null, Method.GET, uri"/searchBrand?brand=?Company%20D").map { response =>
+          val responseBodyText = response.bodyText.compile.string.unsafeRunSync()
+          responseBodyText shouldBe "Invalid brand name format. Only letters and numbers allowed."
           response.status shouldBe Status.BadRequest
         }
       }
