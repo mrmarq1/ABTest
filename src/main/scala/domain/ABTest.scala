@@ -27,8 +27,9 @@ object ABTest {
   case object TestNameUpdated extends TestUpdate
   case object BrandNameUpdated extends TestUpdate
 
-  case class NewTest(brandName: BrandName, testName: TestName, adTextVariants: Vector[variantText],
+  case class NewTest(brandName: BrandName, testName: TestName, adTextVariants: Vector[String],
                      testSpend: BigDecimal, testDuration: Double)
+
 }
 
 
