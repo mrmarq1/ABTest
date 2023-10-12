@@ -9,7 +9,6 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.collection.mutable
 
-
 object PracticeDb {
   val testId1: TestId = TestId(UUID.fromString("0c50d92b-3a3c-45fa-bd1b-08f4b1e9dcac"))
   val testId2: TestId = TestId(UUID.fromString("811c79f4-8e94-4721-9932-4d7a889c0261"))
@@ -20,7 +19,7 @@ object PracticeDb {
   val brand2: BrandName = BrandName("Company B")
   val brand3: BrandName = BrandName("Company C")
 
-  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
   val emptyDateTime = LocalDateTime.MIN
 
   val testsDb: mutable.ArrayBuffer[Test] = mutable.ArrayBuffer(
@@ -36,8 +35,8 @@ object PracticeDb {
       ),
       testSpend = 1000000,
       testDuration =1405.50,
-      testSubmissionDate = LocalDateTime.parse("2023-09-20 09:45", formatter),
-      testStartDate = LocalDateTime.parse("2023-09-20 09:47", formatter),
+      testSubmissionDate = LocalDateTime.parse("2023-09-20 09:45:01", formatter),
+      testStartDate = LocalDateTime.parse("2023-09-20 09:47:35", formatter),
       testStatus = Live,
       testUpdate = NoUpdate
     ),
@@ -53,7 +52,7 @@ object PracticeDb {
       ),
       testSpend = 2500000,
       testDuration = 193.50,
-      testSubmissionDate = LocalDateTime.parse("2023-02-10 10:15", formatter),
+      testSubmissionDate = LocalDateTime.parse("2023-02-10 10:15:23", formatter),
       testStartDate = emptyDateTime,
       testStatus = Pending,
       testUpdate = TestNameUpdated
@@ -68,8 +67,8 @@ object PracticeDb {
       ),
       testSpend = 500000,
       testDuration = 945.50,
-      testSubmissionDate = LocalDateTime.parse("2023-01-07 13:57", formatter),
-      testStartDate = LocalDateTime.parse("2023-02-15 23:27", formatter),
+      testSubmissionDate = LocalDateTime.parse("2023-01-07 13:57:12", formatter),
+      testStartDate = LocalDateTime.parse("2023-02-15 23:27:57", formatter),
       testStatus = Ended,
       testUpdate = NoUpdate
     ),
@@ -87,8 +86,8 @@ object PracticeDb {
       ),
       testSpend = 750000,
       testDuration = 210.00,
-      testSubmissionDate = LocalDateTime.parse("2023-09-30 11:01", formatter),
-      testStartDate = LocalDateTime.parse("2023-10-01 19:33", formatter),
+      testSubmissionDate = LocalDateTime.parse("2023-09-30 11:01:51", formatter),
+      testStartDate = LocalDateTime.parse("2023-10-01 19:33:47", formatter),
       testStatus = Paused,
       testUpdate = BrandNameUpdated
     )
