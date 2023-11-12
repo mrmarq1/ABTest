@@ -1,10 +1,11 @@
 package services
 
-import cats.effect.{MonadCancel, Resource}
+import cats.effect.unsafe.implicits.global
+import cats.effect._
 import cats.{Applicative, Monad, MonadError}
-import com.datastax.oss.driver.api.core.{CqlSession}
+import com.datastax.oss.driver.api.core.CqlSession
 import cats.implicits._
-import com.datastax.oss.driver.api.core.cql.{ResultSet}
+import com.datastax.oss.driver.api.core.cql.ResultSet
 import com.datastax.oss.driver.api.core.data.UdtValue
 
 import scala.collection.mutable
@@ -12,6 +13,7 @@ import java.util.UUID
 import domain.Advert.AdVariant
 import domain.ABTest._
 import domain.Brand._
+import org.http4s.Callback
 import persistence.CassandraDb
 import persistence.PracticeDb._
 
@@ -23,10 +25,12 @@ object TestService {
   // Algebra
   trait TestRoutesAlgebra[F[_]] {
     def addTest(newTest: NewTest): F[QueryResult]
+    def deployTest(testId: TestId): F[QueryResult]
     def updateTestName(testId: TestId, newTestName: TestName): F[mutable.ArrayBuffer[Test]]
     def updateTestStatus(testId: TestId): F[mutable.ArrayBuffer[Test]]
     def getTestById(testId: TestId): F[Either[QueryResult, ResultSet]]
-    def getTestsByBrand(brand: BrandName): F[Option[List[Test]]]
+    def getTestsByBrand(brand: BrandName): F[Either[QueryResult, ResultSet]]
+    def getTestPerformance(testId: TestId): F[Either[QueryResult, ResultSet]]
   }
 
   def createTest(newTest: NewTest): Test = {
@@ -48,7 +52,7 @@ object TestService {
   final case object TestIdNotFoundError extends QueryResult
 
   // Interpreter
-  case class TestRoutesInterpreter[F[_]]()(implicit mc: MonadCancel[F, Throwable]) extends TestRoutesAlgebra[F] {
+  case class TestRoutesInterpreter[F[_]: Async]()(implicit mc: MonadCancel[F, Throwable]) extends TestRoutesAlgebra[F] {
     def dbConnection(database: CassandraDb): Resource[F, CqlSession] = {
       Resource.make(MonadError[F, Throwable].catchNonFatal(database.session())) {
         connection => Applicative[F].pure(println(s"Releasing database connection: '$connection''"))
@@ -60,13 +64,15 @@ object TestService {
     def addTest(newTest: NewTest): F[QueryResult] = {
       val test = createTest(newTest)
 
-      connectionDb.use { connection =>
-        executeAddTestQuery(connection, test)
-          .map(_ => AddTestQuerySuccess: QueryResult)
-      }.handleErrorWith { error =>
-        println(error)
-        Monad[F].pure(AddTestQueryError: QueryResult)
-      }
+      Async[F].blocking {
+        connectionDb.use { connection =>
+          executeAddTestQuery(connection, test)
+            .map(_ => AddTestQuerySuccess: QueryResult)
+        }.handleErrorWith { error =>
+          println(error)
+          Monad[F].pure(AddTestQueryError: QueryResult)
+        }
+      }.flatten
     }
 
     def executeAddTestQuery(connection: CqlSession, test: Test): F[ResultSet] = {
@@ -94,6 +100,35 @@ object TestService {
       Monad[F].pure(queryResult)
     }
 
+    def deployTest(testId: TestId): F[QueryResult] = {
+      Async[F].blocking {
+        connectionDb.use { connection =>
+          createPerformanceTable(connection, testId).map(_ => AddTestQuerySuccess: QueryResult)
+        }.handleErrorWith { error =>
+          println(error)
+          Monad[F].pure(AddTestQueryError: QueryResult)
+        }
+      }.flatten
+    }
+
+    def createPerformanceTable(connection: CqlSession, testId: TestId): F[ResultSet] = {
+      val createTable = {
+        // using direct interpolation below as bound statements don't support dynamic injection of table names
+        // current unsecure approach only to test functionality locally and it'll eliminated with the frontend build
+        s"""
+          CREATE TABLE IF NOT EXISTS abtest.test_performance_${testId.testId.toString.replace("-", "")} (
+             testid uuid,
+             timestamp timestamp,
+             variantid uuid,
+             performance double,
+             PRIMARY KEY (testid, timestamp)
+          );
+        """
+      }
+      val queryResult = connection.execute(createTable)
+      Monad[F].pure(queryResult)
+    }
+
     def updateTestName(testId: TestId, newTestName: TestName): F[mutable.ArrayBuffer[Test]] = {
       ???
     }
@@ -103,8 +138,32 @@ object TestService {
     }
 
     def getTestById(testId: TestId): F[Either[QueryResult, ResultSet]] = {
+      Async[F].blocking {
+        connectionDb.use { connection =>
+          executeGetTestByIdQuery(connection, testId).map[Either[QueryResult, ResultSet]] { result =>
+            if (result.getAvailableWithoutFetching >= 1) {
+              Right(result)
+            } else {
+              Left(TestIdNotFoundError)
+            }
+          }
+        }.handleErrorWith { error =>
+          println(error)
+          Monad[F].pure(Left(DatabaseConnectionError))
+        }
+      }.flatten
+    }
+
+    def executeGetTestByIdQuery(connection: CqlSession, testId: TestId): F[ResultSet] = {
+      val statement = connection.prepare("SELECT * FROM abtest.test WHERE testid = ?")
+      val boundStatement = statement.bind(testId.testId)
+      val queryResult = connection.execute(boundStatement)
+      Monad[F].pure(queryResult)
+    }
+
+    def getTestsByBrand(brandName: BrandName): F[Either[QueryResult, ResultSet]] = {
       connectionDb.use { connection =>
-        executeGetTestByIdQuery(connection, testId).map[Either[QueryResult, ResultSet]] { result =>
+        executeGetTestsByBrandQuery(connection, brandName).map[Either[QueryResult, ResultSet]] { result =>
           if (result.getAvailableWithoutFetching >= 1) {
             Right(result)
           } else {
@@ -117,19 +176,20 @@ object TestService {
       }
     }
 
-    def executeGetTestByIdQuery(connection: CqlSession, testId: TestId): F[ResultSet] = {
-      val statement = connection.prepare("SELECT * FROM abtest.test WHERE testid = ?")
-      val boundStatement = statement.bind(testId.testId)
-      println(s"Executing CQL query with parameters $testId")
+    def executeGetTestsByBrandQuery(connection: CqlSession, brandName: BrandName): F[ResultSet] = {
+      val statement = connection.prepare("SELECT * FROM abtest.test WHERE brandname = ?")
+      val boundStatement = statement.bind(brandName.brandName)
       val queryResult = connection.execute(boundStatement)
-      println(s"Query results: $queryResult")
       Monad[F].pure(queryResult)
     }
 
-    def getTestsByBrand(brandName: BrandName): F[Option[List[Test]]] = {
-      val testsByBrand = brandMappedDb().get(brandName).map(_.toList)
-      Monad[F].pure(testsByBrand)
+    def getTestPerformance(testId: TestId): F[Either[QueryResult, ResultSet]] = {
+      ???
     }
   }
 }
+
+
+
+
 
