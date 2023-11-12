@@ -102,28 +102,20 @@ object TestRoutes extends IOApp {
         jsonResult.asJson.spaces2
       }
 
+    val databaseConnectionError = "Database communication error. " +
+      "If this problem persists please contact the database administrator."
+
     HttpRoutes.of[F] {
       case req@POST -> Root / "submit" =>
         req.as[NewTest].flatMap { newTest =>
           val response = algebra.addTest(newTest)
           response.flatMap {
             case AddTestQuerySuccess => Ok("Test successfully submitted. Execution pending...")
-            case AddTestQueryError  => InternalServerError("Database communication error. If this problem persists please contact the database administrator.")
+            case AddTestQueryError  => InternalServerError(databaseConnectionError)
           }
         }.recoverWith {
           case MalformedMessageBodyFailure(errorMessage, _) =>
             BadRequest(errorMessage)
-        }
-
-      case GET -> Root / "searchBrand" :? BrandQueryParamMatcher(brand) =>
-        refineV[MatchesRegex[W.`"""^[a-zA-Z0-9\\s%]+"""`.T]](brand) match {
-          case Right(validBrand) =>
-            algebra.getTestsByBrand(BrandName(validBrand.value)).flatMap {
-              case Some(brandTests) => Ok(brandTests.asJson)
-              case _ => NotFound(s"'$brand' currently has no tests in the database")
-            }
-          case Left(_) =>
-            BadRequest("Invalid brand name format. Only letters and numbers allowed.")
         }
 
       case GET -> Root / "searchId" :? TestIdQueryParamMatcher(testId) =>
@@ -135,11 +127,38 @@ object TestRoutes extends IOApp {
                 algebra.getTestById(TestId(uuid)).flatMap {
                   case Right(resultSet) => Ok(resultSet)
                   case Left(TestIdNotFoundError) => BadRequest(s"No records found for test id: $uuid")
-                  case Left(DatabaseConnectionError) => InternalServerError("Database communication error. If this problem persists please contact the database administrator.")
+                  case Left(DatabaseConnectionError) => InternalServerError(databaseConnectionError)
                 }
               }
             )
           case _ => BadRequest("No test ID entered")
+        }
+
+      case POST -> Root / "deploy" :? TestIdQueryParamMatcher(testId) =>
+        testId match {
+          case Some(validatedUUID) =>
+            validatedUUID.fold(
+              _ => BadRequest("Invalid UUID format for test ID"),
+              uuid => {
+                algebra.deployTest(TestId(uuid)).flatMap {
+                  case AddTestQuerySuccess=> Ok("Deployment successful. Test running... ")
+                  case AddTestQueryError  => InternalServerError(databaseConnectionError)
+                }
+              }
+            )
+          case _ => BadRequest("No test ID entered")
+        }
+
+      case GET -> Root / "searchBrand" :? BrandQueryParamMatcher(brand) =>
+        refineV[MatchesRegex[W.`"""^[a-zA-Z0-9\\s%]+"""`.T]](brand) match {
+          case Right(validBrand) =>
+            algebra.getTestsByBrand(BrandName(validBrand.value)).flatMap {
+              case Right(resultSet) => Ok(resultSet)
+              case Left(TestIdNotFoundError) => BadRequest(s"No records found for the brand name: $brand")
+              case Left(DatabaseConnectionError) => InternalServerError(databaseConnectionError)
+            }
+          case Left(_) =>
+            BadRequest("Invalid brand name format. Only letters and numbers allowed.")
         }
     }
   }
@@ -159,3 +178,7 @@ object TestRoutes extends IOApp {
       .as(ExitCode.Success)
   }
 }
+
+
+
+
