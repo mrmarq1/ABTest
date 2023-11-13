@@ -124,7 +124,7 @@ object TestRoutes extends IOApp {
             validatedUUID.fold(
               _ => BadRequest("Invalid UUID format for test ID"),
               uuid => {
-                algebra.getTestById(TestId(uuid)).flatMap {
+                algebra.getTestById(TestId(uuid), List("all")).flatMap {
                   case Right(resultSet) => Ok(resultSet)
                   case Left(TestIdNotFoundError) => BadRequest(s"No records found for test id: $uuid")
                   case Left(DatabaseConnectionError) => InternalServerError(databaseConnectionError)
@@ -141,8 +141,8 @@ object TestRoutes extends IOApp {
               _ => BadRequest("Invalid UUID format for test ID"),
               uuid => {
                 algebra.deployTest(TestId(uuid)).flatMap {
-                  case AddTestQuerySuccess=> Ok("Deployment successful. Test running... ")
-                  case AddTestQueryError  => InternalServerError(databaseConnectionError)
+                  case DeploymentSuccess => Ok("Deployment successful. Test running... ")
+                  case DeploymentError  => InternalServerError(databaseConnectionError)
                 }
               }
             )
